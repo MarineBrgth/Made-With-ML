@@ -39,14 +39,14 @@ Quand les données abondent (n grand) → λ → 1 → on fait confiance aux don
 
 ## Les 3 approches de modélisation
 
-### A — Modèle Hiérarchique Bayésien
-Le coût de chaque variante est tiré d'une distribution parente au niveau famille. Le shrinkage émerge naturellement du théorème de Bayes. **Avantage** : intervalles de confiance probabilistes, intégration facile de la connaissance experte via les priors.
+### C — Transfer Learning *(point de départ recommandé)* ⭐
+Pré-entraînement d'un modèle global (GradientBoosting) sur toutes les variantes, fine-tuning des résidus sur les variantes matures. Les variantes rares utilisent directement le modèle global (cold start). **Avantage** : sklearn standard, cold start immédiat, capture les non-linéarités, scalable.
 
-### B — Mixed Effects Model *(recommandé en premier)*
-Effets fixes par famille + effets aléatoires par variante. Les variantes rares ont des effets aléatoires shrinkés vers 0. **Avantage** : lisible en comité de direction, implémentation rapide avec `statsmodels`.
+### B — Mixed Effects Model *(couche d'explicabilité)*
+Effets fixes par famille + effets aléatoires par variante. Les variantes rares ont des effets aléatoires shrinkés vers 0. **Avantage** : lisible en comité de direction — *"le coût famille est X€, la variante s'en écarte de u_v€"*. À utiliser en complément du Transfer Learning pour la communication.
 
-### C — Transfer Learning
-Pré-entraînement d'un modèle global sur toutes les variantes, fine-tuning sur les variantes matures. Les variantes rares utilisent directement le modèle global (cold start). **Avantage** : scalable à l'arrivée de nouvelles variantes.
+### A — Modèle Hiérarchique Bayésien *(si IC formels nécessaires)*
+Le coût de chaque variante est tiré d'une distribution parente au niveau famille. Le shrinkage émerge naturellement du théorème de Bayes. **Avantage** : intervalles de confiance probabilistes, intégration de la connaissance experte via les priors. À utiliser quand les approches C et B ne suffisent pas.
 
 ---
 
@@ -125,6 +125,8 @@ pip install pymc arviz
 
 ## Recommandation pour PRJ2025_773
 
-1. **Court terme** — implémenter Mixed Effects (`statsmodels.MixedLM`), 1-2 semaines
-2. **Moyen terme** — ajouter le modèle bayésien (PyMC) sur les familles à forte proportion de variantes rares, où le gain du shrinkage est le plus visible
-3. **Long terme** — pipeline automatisé avec monitoring de phase et mise à jour online des posteriors
+1. **Étape 1 (obligatoire)** — Transfer Learning : modèle global GBM + fine-tuning résidus, cold start immédiat
+2. **Étape 2 (si explicabilité CODIR)** — Mixed Effects en complément : carte de coût par famille lisible en réunion
+3. **Étape 3 (si IC formels)** — Bayésien hiérarchique sur les familles à forte proportion de variantes rares
+
+**Critère d'arrêt** : si la performance de l'Étape 1 est satisfaisante et que le CODIR n'exige pas d'explications par famille, inutile d'aller plus loin.
